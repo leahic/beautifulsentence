@@ -15,6 +15,7 @@ def test(obj , attrname):
 obj = features.Feature()
 obj.read('../data/sample_sentence.txt')
 obj.solve_feature1()
+obj.solve_feature2()
 obj.save('featureobj')
 
 flag = True
@@ -27,6 +28,8 @@ obj2 = features.Feature()
 obj2 = obj2.load('featureobj')
 flag = test(obj2 , 'docs') and flag
 flag = test(obj2 , 'feature1') and flag
+flag = test(obj2 , 'feature2') and flag
+print obj2.feature2
 
 if flag:
 	print "all test pass"

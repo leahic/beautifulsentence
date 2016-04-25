@@ -32,5 +32,7 @@ class Feature(utils.SaveLoad):
 			self.feature1 = [ [ len(sentence.replace(' ','')) for sentence in doc ] for doc in self.docs ]
 
 	def solve_feature2(self , redo = False):
-		if getattr(self , 'feature1' , None) is None or redo:
-			pass
+		punctuation = [u'，' , u'。' , u'…'  , u'；' , u'：' , u'“' ,u'”', u'、' ,  u'+' , u'-' , u'！' , u'—' , u'《' , u'》' , u'？' , u'（' , u'）'  ,u'·' , u'!' ,u'’' ,u'‘' ,u'.' ,u',']
+		punctuation.append('')
+		if getattr(self , 'feature2' , None) is None or redo:
+			self.feature2 = [ [ len( [ x for x in sentence.split(' ') if x not in punctuation ] ) for sentence in doc ] for doc in self.docs ]
