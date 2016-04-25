@@ -1,5 +1,5 @@
 # beautiful sentence
-*A set of code for find beautiful sentences in the Chinese article*
+*A set of code for finding beautiful sentences in the Chinese article*
 
 The project is used for some personal experiments
 
