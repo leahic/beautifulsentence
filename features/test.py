@@ -25,7 +25,9 @@ TESTLIST = [
 		'feature7',
 		'feature8',
 		'feature9',
-		'feature10'
+		'feature10',
+		'feature11',
+		'feature12'
 	      ]	
 
 for attrname in TESTLIST:
@@ -43,7 +45,7 @@ obj2 = obj2.load('featureobj')
 for attrname in TESTLIST:
 	flag = test(obj2 , attrname) and flag
 
-print getattr( obj , TESTLIST[-1] )
+#print getattr( obj , TESTLIST[-1] ) 
 
 if flag:
 	print "all test pass"

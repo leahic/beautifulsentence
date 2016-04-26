@@ -3,6 +3,7 @@
 
 import sys
 import time
+from collections import defaultdict
 import jieba
 import jieba.posseg as pseg
 import gensim
@@ -13,6 +14,7 @@ class Feature(utils.SaveLoad):
 
 	def __init__(self , datapath = '../data'):
 		self.datapath = datapath if datapath.endswith('/') else datapath + '/'
+		jieba.setLogLevel('NOTSET')
 
 	def read(self , fname , redo = False):
 		if getattr(self ,  'docs' , None) is None or redo:
@@ -118,3 +120,70 @@ class Feature(utils.SaveLoad):
 		if getattr(self , 'feature10' , None) is None or redo:
 			self.readassociated()
 			self.feature10 = [ [ len( [ word for word in sentence if word in self.associated ] ) for sentence in doc ] for doc in self.docs_norm ]
+
+	def solve_feature11(self , redo = False):
+		if getattr(self , 'feature11' , None) is None or redo:
+			self.solve_feature2()
+			self.solve_feature10()
+			np.seterr(all = 'ignore')
+			self.feature11 = []
+			for index in range( len(self.docs_norm) ):
+				x  =  np.array( self.feature2[index] , dtype = np.float32)
+				y  =  np.array( self.feature10[index] , dtype = np.float32)
+				rate = list(y / x)
+				self.feature11.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+
+	def solve_feature12(self , redo = False , vecsize = 10):
+		if getattr(self , 'feature12' , None) is None or redo:
+			if vecsize < 2:
+				raise('vecsize is less than 2')
+
+			vecsize -= 1
+
+			propertydict = defaultdict(int)
+
+			for doc in self.docs_norm:
+				for sentence in doc:
+					for word in sentence:
+						propertydict[ utils.property(word) ] += 1
+
+			propertydict = sorted( [  (word , propertydict[word])  for word in propertydict ] , key = lambda x : - x[1] )
+
+			propertyindex = defaultdict(int)
+
+			vecsize -= 1
+
+			for index , (word , value) in enumerate(propertydict):
+				propertyindex[word] = index if index < vecsize else vecsize
+
+			vecsize += 1
+
+			self.feature12 = []
+			self.feature12_len = vecsize + 1
+
+			for doc in self.docs_norm:
+
+				docvec = []
+
+				for sentence in doc:
+					length = float( len(sentence) )
+					propertyvec = [0.0] * vecsize
+					propertyvec = np.array(propertyvec)
+
+					for word in sentence:
+						propertyvec[ propertyindex[ utils.property(word) ] ] += 1.0
+					
+					propertyvec  = propertyvec / length
+
+					entropy = np.sum (  [ - x * np.log2(x) for x in propertyvec if not x == 0] )
+
+					propertyvec = list(propertyvec)
+					propertyvec.append( entropy )
+
+					docvec.append(  propertyvec  )
+
+				self.feature12.append( docvec )
+
+	
+
+
