@@ -15,7 +15,7 @@ def test(obj , attrname):
 obj = features.Feature(datapath ='../data')
 obj.read('sample_sentence.txt')
 
-TESTLIST = [
+TESTLIST = [		
 		'feature1',
 		'feature2',
 		'feature3',
@@ -27,7 +27,9 @@ TESTLIST = [
 		'feature9',
 		'feature10',
 		'feature11',
-		'feature12'
+		'feature12',
+		'feature13',
+		'feature14'
 	      ]	
 
 for attrname in TESTLIST:
@@ -45,7 +47,7 @@ obj2 = obj2.load('featureobj')
 for attrname in TESTLIST:
 	flag = test(obj2 , attrname) and flag
 
-#print getattr( obj , TESTLIST[-1] ) 
+print getattr( obj , TESTLIST[-1] )
 
 if flag:
 	print "all test pass"

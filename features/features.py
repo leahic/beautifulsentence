@@ -45,6 +45,15 @@ class Feature(utils.SaveLoad):
 			self.associated = [ line.strip('\n').decode('utf-8') for line in f ]
 			f.close()		
 
+	def readwordlevel(self , redo = False):
+		if getattr(self , 'wordlevel' , None) is None or redo:
+			self.wordlevel = dict()
+			for index , target  in enumerate( ['D' , 'C' , 'B' , 'A'] ):
+				f = file(self.datapath + 'word_level/word_level_' + target + '.txt', 'r')
+				for line in f:
+					self.wordlevel[ line.strip('\n').decode('utf-8') ]  = 3 - index
+				f.close()
+
 	def solve_feature1(self , redo = False):
 		if getattr(self , 'feature1' , None) is None or redo:
 			self.feature1 = [ [ len( ''.join(sentence) ) for sentence in doc ] for doc in self.docs_norm ]
@@ -159,7 +168,7 @@ class Feature(utils.SaveLoad):
 			vecsize += 1
 
 			self.feature12 = []
-			self.feature12_len = vecsize + 1
+			self.feature12_size = vecsize + 1
 
 			for doc in self.docs_norm:
 
@@ -184,6 +193,67 @@ class Feature(utils.SaveLoad):
 
 				self.feature12.append( docvec )
 
-	
+	def solve_feature13(self , redo = False , df_min = 10.0):
+		if getattr(self , 'feature13' , None) is None or redo:
+
+			self.readstopwords()
+
+			idf = defaultdict(float)
+			sentenceTot = 0.0
+
+			for doc in self.docs_norm:
+				for sentence in doc:
+					sentenceTot += 1.0
+					for word in set(sentence):
+						idf[word] += 1.0			
+
+			wordkey = sorted( [ (word , idf[word]) for word in idf  if word not in self.stopwords ] , key = lambda x : -x[1] )
+			wordkey = [ word for word , value in wordkey if value >= df_min ]
+
+			for word in idf:
+				idf[word] = np.log( sentenceTot / idf[word] )
+
+			self.feature13 = []
+			self.feature13_size = len(wordkey)
+
+			for doc in self.docs_norm:
+				doctfidf = []
+				for sentence in doc:
+					vec = [0.0] * self.feature13_size
+					for word in sentence:
+						if word in wordkey:
+							vec[ wordkey.index(word) ] += 1.0
+					if len(sentence):
+						vec = [ x / len(sentence) * idf[wordkey[index]] for index , x   in enumerate(vec)]
+
+					doctfidf.append(vec)
+
+				self.feature13.append(doctfidf)
+	def solve_feature14(self , redo = False):
+		if getattr(self , 'feature14' , None) is None or redo:
+
+			self.readwordlevel()
+			self.feature14 = []
+
+			for doc in self.docs_norm:
+				docvec = []
+				for sentence in doc:
+					vec = [0.0] * 5
+					for word in sentence:
+						try:
+							vec[ self.wordlevel[word] ] += 1.0
+						except KeyError , e:
+							vec[4] += 1.0
+
+					if len(sentence):					
+						vec = list( np.array( vec ) / len(sentence) )
+
+					entropy = np.sum (  [ - x * np.log2(x) for x in vec if not x == 0 ]  )
+
+					vec.append(entropy)
+
+					docvec.append(vec)
+
+				self.feature14.append(docvec)
 
 

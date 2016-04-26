@@ -7,6 +7,8 @@ import jieba
 import jieba.posseg as pseg
 import cPickle as pickle
 
+jieba.setLogLevel('NOTSET')
+
 def property(val):
 	if isinstance(val , str) or isinstance(val , unicode):
 		cutlist = pseg.cut(val , HMM=False)
