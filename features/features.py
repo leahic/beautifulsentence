@@ -54,6 +54,23 @@ class Feature(utils.SaveLoad):
 					self.wordlevel[ line.strip('\n').decode('utf-8') ]  = 3 - index
 				f.close()
 
+	def readembedded(self , redo = False):
+		if getattr(self , 'embedded' , None) is None or redo:
+			self.embedded = []
+			f = file(self.datapath + 'embedded_word_two.txt','r')
+			self.embedded.append( [ line.strip('\n').decode('utf-8') for line in f ] )
+			f.close()
+
+			f = file(self.datapath + 'embedded_word_four.txt','r')
+			self.embedded.append( [ line.strip('\n').decode('utf-8') for line in f ] )
+			f.close()
+
+	def _startswith(self , target , wordlist):
+		for word in wordlist:
+			if target.startswith(word):
+				return True
+		return False
+
 	def solve_feature1(self , redo = False):
 		if getattr(self , 'feature1' , None) is None or redo:
 			self.feature1 = [ [ len( ''.join(sentence) ) for sentence in doc ] for doc in self.docs_norm ]
@@ -256,4 +273,103 @@ class Feature(utils.SaveLoad):
 
 				self.feature14.append(docvec)
 
+
+	def solve_feature15(self , redo = False):
+		if getattr(self , 'feature15' , None) is None or redo:
+			self.readembedded()
+			self.feature15 = [ [ len( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) for sentence in doc ] for doc in self.docs_norm ]
+
+	def solve_feature16(self , redo = False):
+		if getattr(self , 'feature16' , None) is None or redo:
+			self.readembedded()
+			self.feature16 = [ [ len(set( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) ) for sentence in doc ] for doc in self.docs_norm ]
+
+	def solve_feature17(self , redo = False):
+		if getattr(self , 'feature17' , None) is None or redo:
+			self.readembedded()
+			self.feature17 = []
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+					sentence = sentence.split(' ')
+					wordnums = 0
+					length = len(sentence)
+					for index , word in enumerate(sentence):
+						if len(word) == 2 and index < length - 1 and len(sentence[index + 1]) == 2 and self._startswith(word , self.embedded[1]):
+							wordnums += 1
+						elif len(word) == 4 and self._startswith(word , self.embedded[1]):
+							wordnums += 1
+
+					docvec.append( wordnums )
+
+				self.feature17.append( docvec )
+
+	def solve_feature18(self , redo = False):
+		if getattr(self , 'feature18' , None) is None or redo:
+			self.readembedded()
+			self.feature18 = []
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+					sentence = sentence.split(' ')
+					wordtarget = set()
+					length = len(sentence)
+					for index , word in enumerate(sentence):
+						if len(word) == 2 and index < length - 1 and len(sentence[index + 1]) == 2 and self._startswith(word , self.embedded[1]):
+							wordtarget.add(word + sentence[index + 1])
+						elif len(word) == 4 and self._startswith(word , self.embedded[1]):
+							wordtarget.add(word)
+
+					docvec.append( len(wordtarget) )
+
+				self.feature18.append( docvec )
+
+
+	def solve_feature21(self , redo = False):
+		if getattr(self , 'feature21' , None) is None or redo:
+			self.solve_feature2()
+			self.solve_feature15()
+			np.seterr(all = 'ignore')
+			self.feature21 = []
+			for index in range( len(self.docs_norm) ):
+				x  =  np.array( self.feature2[index] , dtype = np.float32)
+				y  =  np.array( self.feature15[index] , dtype = np.float32)
+				rate = list(y / x)
+				self.feature21.append( [ x if not np.isnan(x) else 0.0 for x in rate ])	
+
+	def solve_feature22(self , redo = False):
+		if getattr(self , 'feature22' , None) is None or redo:
+			self.solve_feature2()
+			self.solve_feature16()
+			np.seterr(all = 'ignore')
+			self.feature22 = []
+			for index in range( len(self.docs_norm) ):
+				x  =  np.array( self.feature2[index] , dtype = np.float32)
+				y  =  np.array( self.feature16[index] , dtype = np.float32)
+				rate = list(y / x)
+				self.feature22.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+
+	def solve_feature23(self , redo = False):
+		if getattr(self , 'feature23' , None) is None or redo:
+			self.solve_feature2()
+			self.solve_feature17()
+			np.seterr(all = 'ignore')
+			self.feature23 = []
+			for index in range( len(self.docs_norm) ):
+				x  =  np.array( self.feature2[index] , dtype = np.float32)
+				y  =  np.array( self.feature17[index] , dtype = np.float32)
+				rate = list(y / x)
+				self.feature23.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+
+	def solve_feature24(self , redo = False):
+		if getattr(self , 'feature24' , None) is None or redo:
+			self.solve_feature2()
+			self.solve_feature18()
+			np.seterr(all = 'ignore')
+			self.feature24 = []
+			for index in range( len(self.docs_norm) ):
+				x  =  np.array( self.feature2[index] , dtype = np.float32)
+				y  =  np.array( self.feature18[index] , dtype = np.float32)
+				rate = list(y / x)
+				self.feature24.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
 
