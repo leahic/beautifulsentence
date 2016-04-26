@@ -12,13 +12,24 @@ def test(obj , attrname):
 		return True
 
 
-obj = features.Feature()
-obj.read('../data/sample_sentence.txt')
-obj.solve_feature1()
-obj.solve_feature2()
-obj.solve_feature3()
-obj.solve_feature4()
-obj.solve_feature5()
+obj = features.Feature(datapath ='../data')
+obj.read('sample_sentence.txt')
+
+TESTLIST = [
+		'feature1',
+		'feature2',
+		'feature3',
+		'feature4',
+		'feature5',
+		'feature6',
+		'feature7',
+		'feature8',
+		'feature9',
+		'feature10'
+	      ]	
+
+for attrname in TESTLIST:
+	getattr( obj , 'solve_' + attrname )()
 obj.save('featureobj')
 
 flag = True
@@ -27,15 +38,12 @@ print ""
 print "TEST:"
 print ""
 
-obj2 = features.Feature()
+obj2 = features.Feature(datapath ='../data')
 obj2 = obj2.load('featureobj')
-flag = test(obj2 , 'docs') and flag
-flag = test(obj2 , 'feature1') and flag
-flag = test(obj2 , 'feature2') and flag
-flag = test(obj2 , 'feature3') and flag
-flag = test(obj2 , 'feature4') and flag
-flag = test(obj2 , 'feature5') and flag
-print obj2.feature5
+for attrname in TESTLIST:
+	flag = test(obj2 , attrname) and flag
+
+print getattr( obj , TESTLIST[-1] )
 
 if flag:
 	print "all test pass"
