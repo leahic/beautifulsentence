@@ -373,3 +373,122 @@ class Feature(utils.SaveLoad):
 				rate = list(y / x)
 				self.feature24.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
 
+
+	def solve_feature27(self , redo = False):
+		if getattr(self , 'feature27' , None) is None or redo:
+			partdot = [ u'，' , u'。' , u'；' , u'：' , u',' , u'！' , u'？' , u'!' , u'… …' ] 
+
+			self.feature27 = []
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+					sentence = [ sentence ]
+					for dot in partdot:
+						nexturn = []
+						for part in sentence:
+							for seg in part.split(dot):
+								nexturn.append(seg)
+						sentence = nexturn
+
+					docvec.append( len( [ part for part in sentence if len(part) > 0 ]) )
+
+				self.feature27.append( docvec )
+
+
+	def solve_feature28(self , redo = False):
+		if getattr(self , 'feature28' , None) is None or redo:
+
+			partdot = [ u'，' , u'。' , u'；' , u'：' , u',' , u'！' , u'？' , u'!' , u'… …' ] 
+
+			self.feature28 = []
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+					sentence = [ sentence ]
+					for dot in partdot:
+						nexturn = []
+						for part in sentence:
+							for seg in part.split(dot):
+								nexturn.append(seg)
+						sentence = nexturn
+					sentence = [ part for part in sentence if len(part) > 0 ]
+					average = 0.0
+					for part in sentence:
+						average += len(part)
+					if len(sentence) > 0:
+						average /= len(sentence)
+					docvec.append( average )
+
+				self.feature28.append( docvec )
+
+	def solve_feature29(self , redo = False):
+		if getattr(self , 'feature29' , None) is None or redo:
+
+			punctuation = [
+					[u'，' , u',' ],
+					[u'；' , u';'],
+					[u'：' , u':'],
+					[u'“' , u'”' ,u'’' ,u'‘' ,  u"'" , u'"'],
+					[ u'（' , u'）' , u'(' , u')'],
+					[u'、'],
+					[u'—' , u'-'],
+					[u'…' , u'...'],
+					[u'。' , u'.'],
+					[u'！',u'!'],
+					[u'？' , u'?']
+				           ]
+
+			self.feature29 = []
+			self.feature29_size = len(punctuation)
+
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+					vec = [0] * self.feature29_size
+					for w in sentence:
+						for index , flags in enumerate(punctuation):
+							if w in flags:
+								vec[index] += 1
+					docvec.append(vec)
+
+				self.feature29.append(docvec)
+
+
+	def solve_feature30(self , redo = False):
+		if getattr(self , 'feature30' , None) is None or redo:
+
+			nondecorate = ['n' , 's' , 'o' , 't' , 'v' , 'x']
+			decorate = ['a' , 'b' , 'd' , 'm' , 'q' , 'f']
+
+			analogyword = [u'像',u'好像',u'像是',u'似',u'好似',u'恰似',u'似的',u'若',u'如同',u'仿佛',u'犹如',u'有如',u'好比']
+
+			self.feature30 = []
+			
+			for doc in self.docs_norm:
+				docvec = []
+				for sentence in doc:
+					analogynum = 0
+					flag = -1
+					for index , word in enumerate(sentence):					
+						if  flag != -1 and self._startswith( utils.property(word) , ['n'] ):
+							propertymiddle = utils.property( ''.join( sentence[flag + 1:index] ) )
+							choose = 0
+							if len(propertymiddle) == 0:
+								choose = 1
+							for x in propertymiddle:
+								if x in nondecorate:
+									choose = -1
+									break
+								if x in decorate:
+									choose = 1
+							if choose > 0:
+								analogynum += 1
+							flag = -1
+						elif word in analogyword:
+							flag = index
+
+					docvec.append(analogynum)
+
+				self.feature30.append(docvec)
+
+

@@ -37,7 +37,11 @@ TESTLIST = [
 		'feature21',
 		'feature22',
 		'feature23',
-		'feature24'
+		'feature24',
+		'feature27',
+		'feature28',
+		'feature29',
+		'feature30'
 	      ]	
 
 for attrname in TESTLIST:
@@ -54,8 +58,6 @@ obj2 = features.Feature(datapath ='../data')
 obj2 = obj2.load('featureobj')
 for attrname in TESTLIST:
 	flag = test(obj2 , attrname) and flag
-
-print obj.feature23
 
 if flag:
 	print "all test pass"
