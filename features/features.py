@@ -26,12 +26,27 @@ class Feature(utils.SaveLoad):
 					self.docs.append(doc)
 					doc = []
 				else:
-					doc.append(line.strip('\n').decode('utf-8'))	
+					doc.append( line.strip('\n').decode('utf-8') )  	
+			f.close()
 
 		if getattr(self , 'docs_norm' , None) is None or redo:
 			punctuation = [u'，' , u'。' , u'…'  , u'；' , u'：' , u'“' ,u'”', u'、' ,  u'+' , u'-' , u'！' , u'—' , u'《' , u'》' , u'？' , u'（' , u'）'  ,u'·' , u'!' ,u'’' ,u'‘' ,u'.' ,u',']
 			punctuation.append('')		
 			self.docs_norm = [ [ [ word for word in sentence.split(' ') if word not in punctuation ] for sentence in doc ] for doc in self.docs ]			
+
+	def readorigin(self , fname = 'sample_merge.txt' , redo = False):
+		if getattr(self , 'origin' , None) is None or redo:
+			f = file(self.datapath + fname , 'r')
+			self.origin = []
+			doc = []
+			for line in f:
+				if line.startswith('********************'):
+					self.origin.append(doc)
+					doc = []
+				else:
+					doc.append( line.strip('\n').decode('utf-8') )
+			f.close()
+
 
 	def readstopwords(self , redo = False):
 		if getattr(self , 'stopwords' , None) is None or redo:
@@ -382,7 +397,7 @@ class Feature(utils.SaveLoad):
 			for doc in self.docs:
 				docvec = []
 				for sentence in doc:
-					sentence = [ sentence ]
+					sentence = [ sentence.replace(' ' , '') ]
 					for dot in partdot:
 						nexturn = []
 						for part in sentence:
@@ -404,7 +419,7 @@ class Feature(utils.SaveLoad):
 			for doc in self.docs:
 				docvec = []
 				for sentence in doc:
-					sentence = [ sentence ]
+					sentence = [ sentence.replace(' ' , '') ]
 					for dot in partdot:
 						nexturn = []
 						for part in sentence:
@@ -492,3 +507,255 @@ class Feature(utils.SaveLoad):
 				self.feature30.append(docvec)
 
 
+	def solve_feature31(self , redo = False):
+
+		def editdistance(s1 , s2):
+			l1 = len(s1) + 1
+			l2 = len(s2) + 1
+			f = []
+			for i in range(l1):
+				f.append( [0] * l2 )
+
+			for i in range(l1):
+				f[i][0] = i
+			for j in range(l2):
+				f[0][j] = j
+
+			for i in range(1 , l1):
+				for j in range(1 , l2):
+					f[i][j] = min( f[i - 1][j] + 1 , f[i][j - 1] + 1 , f[i - 1][j - 1] + ( 1 if s1[i - 1] != s2[j - 1] else 0 ) )
+
+			return f[l1 - 1][l2 - 1]		
+
+
+		def checkparallel(segments):
+
+			result = 0.0
+
+			basep = utils.property(segments[0])
+			basel = float( len(segments[0]) )
+
+			for index in range( 1 , len(segments) ):
+				sub =  abs( len(segments[index]) - basel )
+
+				if sub > 7:
+					return result
+
+				edis = editdistance( utils.property(segments[index]) , basep ) 
+				rate =  edis / max( float(len(segments[index])) ,  basel )
+
+				if rate > 0.5:
+					return result
+
+				samenum = 0
+
+				for x in segments[0]:
+					if x in segments[index]:
+						samenum += 1
+
+				if samenum < 3:
+					return result
+
+				if sub == 0:
+					result += 0.1 + 0.25 * (1 - rate) + 0.65 * np.log2(samenum)
+				else:
+					result += 0.1 / sub + 0.25 *  (1 - rate) + 0.65 * np.log2(samenum)
+
+			return result 
+					
+
+
+		if getattr(self , 'feature31' , None) is None or redo:
+
+			partdot = [ u'，' , u'。' , u'；' , u'：' , u',' , u'！' , u'？' , u'!' , u'… …' ] 
+
+			self.feature31 = []
+
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+
+					parallel = 0.0
+
+					sentence = [ sentence.replace(' ','') ]
+					for dot in partdot:
+						nexturn = []
+						for part in sentence:
+							for seg in part.split(dot):
+								nexturn.append(seg)
+						sentence = nexturn
+
+					sentence = [ part for part in sentence if len(part) > 0 ]
+
+					for seglen in range( 1 , len(sentence) ):
+						for index in range( len(sentence) - seglen  + 1):
+							segments = []
+							tmp = sentence[index:]
+							while tmp != []:
+								segments.append( ''.join( tmp[0:seglen]) )
+								tmp = tmp[seglen:]								
+
+
+							parallel += checkparallel( segments )
+
+					average = 0.0
+					for seg in sentence:
+						average += len(seg)
+					if len(sentence):
+						average /= len(seg)
+						parallel /= average
+
+					docvec.append( parallel )
+
+				self.feature31.append( docvec )
+
+
+	def solve_feature32(self , redo = False):
+		if getattr(self , 'feature32' , None) is None or redo:
+
+			partdot = [ u'，' , u'。' , u'；' , u'：' , u',' , u'！' , u'？' , u'!' , u'… …' ] 
+
+			punctuation = [u'？' , u'?']
+
+			questionword = [u'难道' , u'怎能' , u'怎么能'  , u'怎么可能', u'何曾' , u'不是' , u'真的' , u'又会' , u'何必' ]
+
+			self.feature32 = []
+			
+			for doc in self.docs:
+				docvec = []
+				for sentence in doc:
+
+					questionum = 0
+
+					sentence = [ sentence.replace(' ','') ]
+
+					questionflag = []
+
+					length = 0
+
+					for x in sentence[0]:
+						if x not in partdot:
+							length += 1
+						elif x in punctuation:
+							questionflag.append(length)
+
+					for dot in partdot:
+						nexturn = []
+						for part in sentence:
+							for seg in part.split(dot):
+								nexturn.append(seg)
+						sentence = nexturn
+
+					sentence = [ part for part in sentence if len(part) > 0 ]
+
+					length = 0
+
+					for seg in sentence:
+						length += len(seg)
+						if length in questionflag:
+							founded = False
+							for word in questionword:
+								if seg.find(word) != -1:
+									founded = True
+									break
+							if founded:
+								questionum += 1
+
+					docvec.append(questionum)
+
+				self.feature32.append(docvec)
+
+
+	def solve_feature36(self , redo = False):
+		if getattr(self , 'feature36' , None) is None:
+			self.readorigin()
+
+			sentencecut = [u'。',u'！',u'？',u'……']
+
+			docparagraph = []
+
+			for doc in self.origin:
+				length = 0
+				paragraph = []
+				for line in doc:
+					length += len(line)
+					paragraph.append( length )
+
+				docparagraph.append(paragraph)
+
+			self.feature36 = []
+
+			for index , doc in enumerate( self.docs ):
+
+				paranum = 0
+				length = 0
+				docvec = []
+				for sentence in doc:					
+					docvec.append(paranum)
+
+					sentence = sentence.replace(' ' , '')
+					length += len(sentence)
+
+					if length in docparagraph[index]:
+						paranum += 1
+
+				self.feature36.append(docvec)
+
+
+
+	def solve_feature37(self , redo = False):
+		if getattr(self , 'feature37' , None) is None:
+			self.readorigin()
+
+			sentencecut = [u'。',u'！',u'？',u'……']
+
+			docparagraph = []
+
+			for doc in self.origin:
+				length = 0
+				paragraph = []
+				for line in doc:
+					length += len(line)
+					paragraph.append( length )
+
+				docparagraph.append(paragraph)
+
+			self.feature37 = []
+
+			for index , doc in enumerate( self.docs ):
+
+				paranum = 0
+				length = 0
+				docvec = []
+				for sentence in doc:					
+					docvec.append(len(docparagraph[index]) - paranum - 1)
+
+					sentence = sentence.replace(' ' , '')
+					length += len(sentence)
+
+					if length in docparagraph[index]:
+						paranum += 1
+
+				self.feature37.append(docvec)
+
+	def solve_feature38(self , redo = False):
+		if getattr(self, 'feature38' , None) is None:
+
+			self.feature38 = []
+			for doc in self.docs_norm:
+				docvec = []
+				for index , sentence in enumerate(doc):
+					docvec.append(index)
+				self.feature38.append(docvec)
+
+
+
+	def solve_feature39(self , redo = False):
+		if getattr(self, 'feature39' , None) is None:
+
+			self.feature39 = []
+			for doc in self.docs_norm:
+				docvec = []
+				for index , sentence in enumerate(doc):
+					docvec.append( len(doc) - index - 1)
+				self.feature39.append(docvec)

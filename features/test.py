@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Licensed under the GNU GPLv2 - http://www.gnu.org/licenses/gpl-2.0.html
 
+import time
 import features
 
 def test(obj , attrname):
@@ -41,8 +42,18 @@ TESTLIST = [
 		'feature27',
 		'feature28',
 		'feature29',
-		'feature30'
+		'feature30',
+		'feature31',
+		'feature32',
+		'feature36',
+		'feature37',
+		'feature38',
+		'feature39'
 	      ]	
+
+print ""
+print "TEST:" , time.ctime()
+print ""
 
 for attrname in TESTLIST:
 	getattr( obj , 'solve_' + attrname )()
@@ -50,9 +61,7 @@ obj.save('featureobj')
 
 flag = True
 
-print ""
-print "TEST:"
-print ""
+
 
 obj2 = features.Feature(datapath ='../data')
 obj2 = obj2.load('featureobj')
@@ -60,6 +69,6 @@ for attrname in TESTLIST:
 	flag = test(obj2 , attrname) and flag
 
 if flag:
-	print "all test pass"
-else:
-	print "some errors"
+	print "all test pass" , time.ctime()
+else: 
+	print "some errors" , time.ctime()
