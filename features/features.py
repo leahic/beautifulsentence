@@ -665,9 +665,44 @@ class Feature(utils.SaveLoad):
 
 				self.feature32.append(docvec)
 
+	def solve_feature33(self , redo = False):
+		if getattr(self , 'feature33' , None) is None or redo:
+			self.readstopwords()
+			# prepare for lda training
+			ldadocs = []
+			
+			for doc in self.docs_norm:
+				for sentence in doc:
+					sentence = [word for word in sentence if word not in self.stopwords]
+					ldadocs.append( sentence )
+
+			f = file(self.datapath + 'lda_input.txt','w')
+			f.write( str(len(ldadocs)) + '\n')
+			for sentence in ldadocs:
+				for word in sentence:
+					f.write( word.encode('utf-8') + ' ')
+				f.write('\n')
+			f.close()
+
+			# read data after lda training
+			self.feature33 = []
+			f = file(self.datapath + 'lda_input.txt.theta','r')
+			for doc in self.docs_norm:
+				docvec = []
+				for sentence in doc:
+					vec = f.readline().split()
+					vec = [ eval(x) for x in vec ]
+					docvec.append(vec)
+
+				self.feature33.append(docvec)
+			f.close()
+	
+	def solve_feature35(self , redo = False):
+		if getattr(self , 'feature35' , None) is None or redo:
+			pass
 
 	def solve_feature36(self , redo = False):
-		if getattr(self , 'feature36' , None) is None:
+		if getattr(self , 'feature36' , None) is None or redo:
 			self.readorigin()
 
 			sentencecut = [u'。',u'！',u'？',u'……']
@@ -704,7 +739,7 @@ class Feature(utils.SaveLoad):
 
 
 	def solve_feature37(self , redo = False):
-		if getattr(self , 'feature37' , None) is None:
+		if getattr(self , 'feature37' , None) is None or redo:
 			self.readorigin()
 
 			sentencecut = [u'。',u'！',u'？',u'……']
@@ -739,7 +774,7 @@ class Feature(utils.SaveLoad):
 				self.feature37.append(docvec)
 
 	def solve_feature38(self , redo = False):
-		if getattr(self, 'feature38' , None) is None:
+		if getattr(self, 'feature38' , None) is None or redo:
 
 			self.feature38 = []
 			for doc in self.docs_norm:
@@ -751,7 +786,7 @@ class Feature(utils.SaveLoad):
 
 
 	def solve_feature39(self , redo = False):
-		if getattr(self, 'feature39' , None) is None:
+		if getattr(self, 'feature39' , None) is None or redo:
 
 			self.feature39 = []
 			for doc in self.docs_norm:
