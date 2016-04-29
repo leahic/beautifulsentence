@@ -46,12 +46,13 @@ TESTLIST = [
 		'feature31',
 		'feature32',
 		'feature33',
+		'feature34'
 		'feature36',
 		'feature37',
 		'feature38',
 		'feature39'
 	      ]	
-
+ 
 print ""
 print "TEST:" , time.ctime()
 print ""
@@ -61,8 +62,6 @@ for attrname in TESTLIST:
 obj.save('featureobj')
 
 flag = True
-
-
 
 obj2 = features.Feature(datapath ='../data')
 obj2 = obj2.load('featureobj')

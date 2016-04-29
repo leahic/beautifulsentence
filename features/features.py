@@ -697,6 +697,38 @@ class Feature(utils.SaveLoad):
 				self.feature33.append(docvec)
 			f.close()
 	
+	def solve_feature34(self , redo = False):
+		if getattr(self , 'feature34' , None) is None or redo:
+			self.readstopwords()
+			# prepare for word2vec training
+			w2vdocs = []
+			
+			for doc in self.docs_norm:
+				for sentence in doc:
+					sentence = [word for word in sentence if word not in self.stopwords]
+					w2vdocs.append( sentence )
+
+			f = file(self.datapath + 'w2v_input.txt','w')
+			for sentence in w2vdocs:
+				for word in sentence:
+					f.write( word.encode('utf-8') + ' ')
+				f.write('\n')
+			f.close()
+
+			# read data after word2vec training
+			self.feature34 = []
+			f = file(self.datapath + 'w2v_output.txt','r')
+			for doc in self.docs_norm:
+				docvec = []
+				for sentence in doc:
+					vec = f.readline().split()
+					vec = [ eval(x) for x in vec ]
+					docvec.append(vec)
+
+				self.feature34.append(docvec)
+			f.close()
+
+
 	def solve_feature35(self , redo = False):
 		if getattr(self , 'feature35' , None) is None or redo:
 			pass
