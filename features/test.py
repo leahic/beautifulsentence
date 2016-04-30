@@ -46,7 +46,8 @@ TESTLIST = [
 		'feature31',
 		'feature32',
 		'feature33',
-		'feature34'
+		'feature34',
+		'feature35',
 		'feature36',
 		'feature37',
 		'feature38',

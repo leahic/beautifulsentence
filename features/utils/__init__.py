@@ -3,6 +3,7 @@
 
 import sys
 import time
+import numpy as np
 import jieba
 import jieba.posseg as pseg
 import cPickle as pickle
@@ -16,7 +17,12 @@ def property(val):
 	else:
 		raise("param must be unicode")
 
-
+def normalize(vec):
+	vec = np.array(vec)
+	denominator = np.sqrt(np.sum( vec ** 2 ))
+	if  denominator != 0:
+		vec  = vec / denominator
+	return list(vec)
 
 class SaveLoad(object):
 	def load(self, fname):

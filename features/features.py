@@ -89,10 +89,12 @@ class Feature(utils.SaveLoad):
 	def solve_feature1(self , redo = False):
 		if getattr(self , 'feature1' , None) is None or redo:
 			self.feature1 = [ [ len( ''.join(sentence) ) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature1 = [ utils.normalize(docvec) for docvec in self.feature1]
  
 	def solve_feature2(self , redo = False):
 		if getattr(self , 'feature2' , None) is None or redo:
 			self.feature2 = [ [ len( sentence ) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature2 = [ utils.normalize(docvec) for docvec in self.feature2]
 
 	def solve_feature3(self , redo = False):
 		if getattr(self , 'feature3' , None) is None or redo:
@@ -106,9 +108,12 @@ class Feature(utils.SaveLoad):
 				rate = list(y / x)
 				self.feature3.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
 
+			self.feature3 = [ utils.normalize(docvec) for docvec in self.feature3]
+
 	def solve_feature4(self , redo = False):
 		if getattr(self , 'feature4' , None) is None or redo:
 			self.feature4 = [ [ len(set(sentence)) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature4 = [ utils.normalize(docvec) for docvec in self.feature4]
 
 	def solve_feature5(self , redo = False):
 		if getattr(self , 'feature5' , None) is None or redo:
@@ -121,11 +126,13 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature4[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature5.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature5 = [ utils.normalize(docvec) for docvec in self.feature5]
 
 	def solve_feature6(self , redo = False):
 		if getattr(self , 'feature6' , None) is None or redo:
 			self.readstopwords()
 			self.feature6 = [ [ len(set( [ word for word in sentence if word not in self.stopwords] )) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature6 = [ utils.normalize(docvec) for docvec in self.feature6]
 
 
 	def solve_feature7(self , redo = False):
@@ -139,11 +146,13 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature6[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature7.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature7 = [ utils.normalize(docvec) for docvec in self.feature7]
 
 	def solve_feature8(self , redo = False):
 		if getattr(self , 'feature8' , None) is None or redo:
 			self.readstopwords()
 			self.feature8 = [ [ len(set( [ word for word in sentence if word not in self.stopwords and len(word) == 4 ] )) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature8 = [ utils.normalize(docvec) for docvec in self.feature8]
 
 	def solve_feature9(self , redo = False):
 		if getattr(self , 'feature9' , None) is None or redo:
@@ -156,11 +165,13 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature8[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature9.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature9 = [ utils.normalize(docvec) for docvec in self.feature9]
 
 	def solve_feature10(self , redo = False):
 		if getattr(self , 'feature10' , None) is None or redo:
 			self.readassociated()
 			self.feature10 = [ [ len( [ word for word in sentence if word in self.associated ] ) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature10 = [ utils.normalize(docvec) for docvec in self.feature10]
 
 	def solve_feature11(self , redo = False):
 		if getattr(self , 'feature11' , None) is None or redo:
@@ -173,6 +184,7 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature10[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature11.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature11 = [ utils.normalize(docvec) for docvec in self.feature11]
 
 	def solve_feature12(self , redo = False , vecsize = 10):
 		if getattr(self , 'feature12' , None) is None or redo:
@@ -225,6 +237,8 @@ class Feature(utils.SaveLoad):
 
 				self.feature12.append( docvec )
 
+			self.feature12 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature12]
+
 	def solve_feature13(self , redo = False , df_min = 10.0):
 		if getattr(self , 'feature13' , None) is None or redo:
 
@@ -261,12 +275,14 @@ class Feature(utils.SaveLoad):
 					doctfidf.append(vec)
 
 				self.feature13.append(doctfidf)
+			self.feature13 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature13]
+
 	def solve_feature14(self , redo = False):
 		if getattr(self , 'feature14' , None) is None or redo:
 
 			self.readwordlevel()
 			self.feature14 = []
-
+			self.feature14_size = 6
 			for doc in self.docs_norm:
 				docvec = []
 				for sentence in doc:
@@ -288,16 +304,20 @@ class Feature(utils.SaveLoad):
 
 				self.feature14.append(docvec)
 
+			self.feature14 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature14]
+
 
 	def solve_feature15(self , redo = False):
 		if getattr(self , 'feature15' , None) is None or redo:
 			self.readembedded()
 			self.feature15 = [ [ len( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature15 = [ utils.normalize(docvec) for docvec in self.feature15]
 
 	def solve_feature16(self , redo = False):
 		if getattr(self , 'feature16' , None) is None or redo:
 			self.readembedded()
 			self.feature16 = [ [ len(set( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) ) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature16 = [ utils.normalize(docvec) for docvec in self.feature16]
 
 	def solve_feature17(self , redo = False):
 		if getattr(self , 'feature17' , None) is None or redo:
@@ -318,6 +338,7 @@ class Feature(utils.SaveLoad):
 					docvec.append( wordnums )
 
 				self.feature17.append( docvec )
+			self.feature17 = [ utils.normalize(docvec) for docvec in self.feature17]
 
 	def solve_feature18(self , redo = False):
 		if getattr(self , 'feature18' , None) is None or redo:
@@ -338,6 +359,7 @@ class Feature(utils.SaveLoad):
 					docvec.append( len(wordtarget) )
 
 				self.feature18.append( docvec )
+			self.feature18 = [ utils.normalize(docvec) for docvec in self.feature18]
 
 
 	def solve_feature21(self , redo = False):
@@ -351,6 +373,7 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature15[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature21.append( [ x if not np.isnan(x) else 0.0 for x in rate ])	
+			self.feature21 = [ utils.normalize(docvec) for docvec in self.feature21]
 
 	def solve_feature22(self , redo = False):
 		if getattr(self , 'feature22' , None) is None or redo:
@@ -363,6 +386,7 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature16[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature22.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature22 = [ utils.normalize(docvec) for docvec in self.feature22]
 
 	def solve_feature23(self , redo = False):
 		if getattr(self , 'feature23' , None) is None or redo:
@@ -375,6 +399,7 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature17[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature23.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature23 = [ utils.normalize(docvec) for docvec in self.feature23]
 
 	def solve_feature24(self , redo = False):
 		if getattr(self , 'feature24' , None) is None or redo:
@@ -387,6 +412,7 @@ class Feature(utils.SaveLoad):
 				y  =  np.array( self.feature18[index] , dtype = np.float32)
 				rate = list(y / x)
 				self.feature24.append( [ x if not np.isnan(x) else 0.0 for x in rate ])
+			self.feature24 = [ utils.normalize(docvec) for docvec in self.feature24]
 
 
 	def solve_feature27(self , redo = False):
@@ -408,6 +434,7 @@ class Feature(utils.SaveLoad):
 					docvec.append( len( [ part for part in sentence if len(part) > 0 ]) )
 
 				self.feature27.append( docvec )
+			self.feature27 = [ utils.normalize(docvec) for docvec in self.feature27]
 
 
 	def solve_feature28(self , redo = False):
@@ -435,6 +462,7 @@ class Feature(utils.SaveLoad):
 					docvec.append( average )
 
 				self.feature28.append( docvec )
+			self.feature28 = [ utils.normalize(docvec) for docvec in self.feature28]
 
 	def solve_feature29(self , redo = False):
 		if getattr(self , 'feature29' , None) is None or redo:
@@ -467,6 +495,7 @@ class Feature(utils.SaveLoad):
 					docvec.append(vec)
 
 				self.feature29.append(docvec)
+			self.feature29 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature29]
 
 
 	def solve_feature30(self , redo = False):
@@ -505,6 +534,7 @@ class Feature(utils.SaveLoad):
 					docvec.append(analogynum)
 
 				self.feature30.append(docvec)
+			self.feature30 = [ utils.normalize(docvec) for docvec in self.feature30]
 
 
 	def solve_feature31(self , redo = False):
@@ -607,7 +637,11 @@ class Feature(utils.SaveLoad):
 
 					docvec.append( parallel )
 
+				for index in range(len(doc)):
+					docvec[index] += checkparallel( doc[index:] )
+
 				self.feature31.append( docvec )
+			self.feature31 = [ utils.normalize(docvec) for docvec in self.feature31]
 
 
 	def solve_feature32(self , redo = False):
@@ -664,6 +698,7 @@ class Feature(utils.SaveLoad):
 					docvec.append(questionum)
 
 				self.feature32.append(docvec)
+			self.feature32 = [ utils.normalize(docvec) for docvec in self.feature32]
 
 	def solve_feature33(self , redo = False):
 		if getattr(self , 'feature33' , None) is None or redo:
@@ -696,6 +731,8 @@ class Feature(utils.SaveLoad):
 
 				self.feature33.append(docvec)
 			f.close()
+			self.feature33_size = len(self.feature33[0][0])
+			self.feature33 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature33]
 	
 	def solve_feature34(self , redo = False):
 		if getattr(self , 'feature34' , None) is None or redo:
@@ -727,11 +764,58 @@ class Feature(utils.SaveLoad):
 
 				self.feature34.append(docvec)
 			f.close()
+			self.feature34_size = len(self.feature34[0][0])
+			self.feature34 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature34]
 
 
-	def solve_feature35(self , redo = False):
+	def solve_feature35(self , redo = False  , niter = 100 ,  d = 0.85):
 		if getattr(self , 'feature35' , None) is None or redo:
-			pass
+
+			self.readstopwords()
+
+			def similarity(s1 , s2):
+				wordsame = float( len( set( [word for word in s1 if word in s2] ) ) )
+				if len(s1) == 0 or len(s2) == 0:
+					return 0.0
+				try:
+					return wordsame / float( np.log(len(s1)) + np.log(len(s2)) )
+				except ZeroDivisionError , e:
+					return 0.0
+
+			self.feature35 = []
+
+			for doc in self.docs_norm:
+				doc = [ [word for word in sentence if word not in self.stopwords] for sentence in doc ]
+				sentencesimilar = dict()
+				for i in range(len(doc)):
+					for j in range(len(doc)):
+						if not i == j:
+							sentencesimilar[ (i , j) ] = similarity(doc[i] , doc[j])
+
+				wsum  = [0.0] * len(doc)
+
+				for i in range(len(doc)):
+					for j in range(len(doc)):
+						if i != j:
+							wsum[i] += sentencesimilar [ (i , j) ]
+
+				ws = [1.0 / len(doc) ] * len(doc)
+
+				turns = niter
+				while turns > 0:
+					turns -= 1
+					wsnext = [1 - d] * len(doc)
+					for i in range(len(doc)):
+						for j in range(len(doc)):
+							if i != j and wsum[j] != 0:
+								wsnext[i] += d * sentencesimilar[i , j] / wsum[j] * ws[j]
+					if wsnext == ws:
+						break
+					ws = wsnext
+
+				self.feature35.append(ws)
+			self.feature35 = [ utils.normalize(docvec) for docvec in self.feature35]
+			
 
 	def solve_feature36(self , redo = False):
 		if getattr(self , 'feature36' , None) is None or redo:
@@ -767,6 +851,8 @@ class Feature(utils.SaveLoad):
 						paranum += 1
 
 				self.feature36.append(docvec)
+
+			self.feature36 = [ utils.normalize(docvec) for docvec in self.feature36]
 
 
 
@@ -804,6 +890,7 @@ class Feature(utils.SaveLoad):
 						paranum += 1
 
 				self.feature37.append(docvec)
+			self.feature37 = [ utils.normalize(docvec) for docvec in self.feature37]
 
 	def solve_feature38(self , redo = False):
 		if getattr(self, 'feature38' , None) is None or redo:
@@ -814,7 +901,7 @@ class Feature(utils.SaveLoad):
 				for index , sentence in enumerate(doc):
 					docvec.append(index)
 				self.feature38.append(docvec)
-
+			self.feature38 = [ utils.normalize(docvec) for docvec in self.feature38]
 
 
 	def solve_feature39(self , redo = False):
@@ -826,3 +913,4 @@ class Feature(utils.SaveLoad):
 				for index , sentence in enumerate(doc):
 					docvec.append( len(doc) - index - 1)
 				self.feature39.append(docvec)
+			self.feature39 = [ utils.normalize(docvec) for docvec in self.feature39]
