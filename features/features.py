@@ -9,6 +9,7 @@ import jieba.posseg as pseg
 import gensim
 import numpy as np
 import utils
+import utils.pagerank
 
 class Feature(utils.SaveLoad):
 
@@ -53,6 +54,9 @@ class Feature(utils.SaveLoad):
 			f = file(self.datapath + 'stopwords.txt','r')
 			self.stopwords = [ line.strip('\n').decode('utf-8') for line in f ]
 			f.close()
+
+		if getattr(self, 'docs_limit' , None) is None or redo:
+			self.docs_limit = [ [ [ word for word in sentence if word not in self.stopwords] for sentence in doc] for doc in self.docs_norm]
 
 	def readassociated(self , redo = False):
 		if getattr(self , 'associated' , None) is None or redo:
@@ -129,7 +133,7 @@ class Feature(utils.SaveLoad):
 	def solve_feature6(self , redo = False):
 		if getattr(self , 'feature6' , None) is None or redo:
 			self.readstopwords()
-			self.feature6 = [ [ len(set( [ word for word in sentence if word not in self.stopwords] )) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature6 = [ [ len(set(sentence)) for sentence in doc ] for doc in self.docs_limit ]
 			self.feature6 = [ utils.scalemax(docvec) for docvec in self.feature6]
 
 
@@ -148,7 +152,7 @@ class Feature(utils.SaveLoad):
 	def solve_feature8(self , redo = False):
 		if getattr(self , 'feature8' , None) is None or redo:
 			self.readstopwords()
-			self.feature8 = [ [ len(set( [ word for word in sentence if word not in self.stopwords and len(word) == 4 ] )) for sentence in doc ] for doc in self.docs_norm ]
+			self.feature8 = [ [ len(set( [ word for word in sentence if  len(word) == 4 ] )) for sentence in doc ] for doc in self.docs_limit ]
 			self.feature8 = [ utils.scalemax(docvec) for docvec in self.feature8]
 
 	def solve_feature9(self , redo = False):
@@ -215,14 +219,13 @@ class Feature(utils.SaveLoad):
 				docvec = []
 
 				for sentence in doc:
-					length = float( len(sentence) )
 					propertyvec = [0.0] * vecsize
 					propertyvec = np.array(propertyvec)
 
 					for word in sentence:
 						propertyvec[ propertyindex[ utils.property(word) ] ] += 1.0
 					
-					propertyvec  = propertyvec / length
+					propertyvec  = utils.normalize(propertyvec)
 
 					entropy = np.sum (  [ - x * np.log2(x) for x in propertyvec if not x == 0] )
 
@@ -247,13 +250,13 @@ class Feature(utils.SaveLoad):
 			idf = defaultdict(float)
 			sentenceTot = 0.0
 
-			for doc in self.docs_norm:
+			for doc in self.docs_limit:
 				for sentence in doc:
 					sentenceTot += 1.0
 					for word in set(sentence):
 						idf[word] += 1.0			
 
-			wordkey = sorted( [ (word , idf[word]) for word in idf  if word not in self.stopwords ] , key = lambda x : -x[1] )
+			wordkey = sorted( [ (word , idf[word]) for word in idf ] , key = lambda x : -x[1] )
 			wordkey = [ word for word , value in wordkey if value >= df_min ]
 
 			for word in idf:
@@ -262,7 +265,7 @@ class Feature(utils.SaveLoad):
 			self.feature13 = []
 			self.feature13_size = len(wordkey)
 
-			for doc in self.docs_norm:
+			for doc in self.docs_limit:
 				doctfidf = []
 				for sentence in doc:
 					vec = [0.0] * self.feature13_size
@@ -294,8 +297,7 @@ class Feature(utils.SaveLoad):
 						except KeyError , e:
 							vec[4] += 1.0
 
-					if len(sentence):					
-						vec = list( np.array( vec ) / len(sentence) )
+					vec = utils.normalize(vec)
 
 					entropy = np.sum (  [ - x * np.log2(x) for x in vec if not x == 0 ]  )
 
@@ -493,10 +495,10 @@ class Feature(utils.SaveLoad):
 						for index , flags in enumerate(punctuation):
 							if w in flags:
 								vec[index] += 1
+					vec = utils.normalize(vec)
 					docvec.append(vec)
 
 				self.feature29.append(docvec)
-			self.feature29 = [ [utils.normalize(onevec) for onevec in docvec] for docvec in self.feature29]
 
 
 	def solve_feature30(self , redo = False):
@@ -707,9 +709,8 @@ class Feature(utils.SaveLoad):
 			# prepare for lda training
 			ldadocs = []
 			
-			for doc in self.docs_norm:
+			for doc in self.docs_limit:
 				for sentence in doc:
-					sentence = [word for word in sentence if word not in self.stopwords]
 					ldadocs.append( sentence )
 
 			f = file(self.datapath + 'lda_input.txt','w')
@@ -739,8 +740,8 @@ class Feature(utils.SaveLoad):
 			self.readstopwords()
 			# prepare for lda training
 			ldadocs = []	
-			for doc in self.docs_norm:				
-				ldadocs.append( ' '.join( [ ' '.join([word for word in sentence if word not in self.stopwords]) for sentence in doc ] ) ) 
+			for doc in self.docs_limit:				
+				ldadocs.append( ' '.join( [ ' '.join(sentence) for sentence in doc ] ) ) 
 
 			f = file(self.datapath + 'lda_input_100.txt','w')
 			f.write( str(len(ldadocs)) + '\n')
@@ -752,26 +753,30 @@ class Feature(utils.SaveLoad):
 			# read data after lda training
 			sentencesvec = []
 			f = file(self.datapath + 'lda_input.txt.theta','r')
-			for doc in self.docs_norm:
+			for index in range(len(self.docs_limit)):
 				docvec = []
-				for sentence in doc:
+				for index2 in range(len(self.docs_limit[index])):
 					vec = f.readline().split()
 					vec = [ eval(x) for x in vec ]
 					docvec.append(vec)
-				sentencevec.append(docvec)
+				sentencesvec.append(docvec)
 			f.close()
 
 			#read doc lda vector
 			docsvec = []
 			f = file(self.datapath + 'lda_input_100.txt.theta','r')
-			for index in range(len(self.docs_norm)):
+			for index in range(len(self.docs_limit)):
 				vec = f.readline().split()
 				vec = [ eval(x) for x in vec ]
 				docsvec.append(vec)
 			f.close()
 
 			self.feature34 = []
-
+			for index in range(len(sentencesvec)):
+				docvec = []
+				for index2 in range(len(sentencesvec[index])):
+					docvec.append( np.dot(docsvec[index] , sentencesvec[index][index2]) )
+				self.feature34.append(docvec)
 
 
 	def solve_feature35(self , redo = False):
@@ -779,27 +784,26 @@ class Feature(utils.SaveLoad):
 			self.readstopwords()
 			# prepare for lda training
 			ldadocs = []	
-			for doc in self.docs_norm:				
-				ldadocs.append( ' '.join( [ [word for word in sentence if word not in self.stopwords] for sentence in doc ] ) ) 
+			for doc in self.docs_limit:				
+				ldadocs.append( ' '.join( [ ' '.join(sentence) for sentence in doc ] ) ) 
 
 			f = file(self.datapath + 'lda_input_100.txt','w')
 			f.write( str(len(ldadocs)) + '\n')
 			for sentence in ldadocs:
-				for word in sentence:
-					f.write( word.encode('utf-8') + ' ')
+				f.write( sentence.encode('utf-8') + ' ')
 				f.write('\n')
 			f.close()
 
 			# read data after lda training
 			sentencesvec = []
 			f = file(self.datapath + 'lda_input.txt.theta','r')
-			for doc in self.docs_norm:
+			for index in range(len(self.docs_limit)):
 				docvec = []
-				for sentence in doc:
+				for index2 in range(len(self.docs_limit[index])):
 					vec = f.readline().split()
 					vec = [ eval(x) for x in vec ]
 					docvec.append(vec)
-				sentencevec.append(docvec)
+				sentencesvec.append(docvec)
 			f.close()
 
 			#read doc lda vector
@@ -811,7 +815,13 @@ class Feature(utils.SaveLoad):
 				docsvec.append(vec)
 			f.close()
 
-			self.feature34 = []
+			self.feature35 = []
+			for index in range(len(sentencesvec)):
+				docvec = []
+				maxindex =  sorted( enumerate(docsvec[index]) , key = lambda x : -x[1] )[0][0]
+				for index2 in range(len(sentencesvec[index])):
+					docvec.append(sentencesvec[index][index2][maxindex])
+				self.feature35.append(docvec)
 		
 
 	def solve_feature36(self , redo = False):
@@ -820,9 +830,8 @@ class Feature(utils.SaveLoad):
 			# prepare for word2vec training
 			w2vdocs = []
 			
-			for doc in self.docs_norm:
+			for doc in self.docs_limit:
 				for sentence in doc:
-					sentence = [word for word in sentence if word not in self.stopwords]
 					w2vdocs.append( sentence )
 
 			f = file(self.datapath + 'w2v_input.txt','w')
@@ -847,54 +856,13 @@ class Feature(utils.SaveLoad):
 			self.feature36_size = len(self.feature36[0][0])
 
 
-	def solve_feature37(self , redo = False  , niter = 100 ,  d = 0.85):
+	def solve_feature37(self , redo = False  , niter = 1000 ,  d = 0.85):
 		if getattr(self , 'feature37' , None) is None or redo:
-
 			self.readstopwords()
-
-			def similarity(s1 , s2):
-				wordsame = float( len( set( [word for word in s1 if word in s2] ) ) )
-				if len(s1) == 0 or len(s2) == 0:
-					return 0.0
-				try:
-					return wordsame / float( np.log(len(s1)) + np.log(len(s2)) )
-				except ZeroDivisionError , e:
-					return 0.0
-
-			self.feature37 = []
-
-			for doc in self.docs_norm:
-				doc = [ [word for word in sentence if word not in self.stopwords] for sentence in doc ]
-				sentencesimilar = dict()
-				for i in range(len(doc)):
-					for j in range(len(doc)):
-						if not i == j:
-							sentencesimilar[ (i , j) ] = similarity(doc[i] , doc[j])
-
-				wsum  = [0.0] * len(doc)
-
-				for i in range(len(doc)):
-					for j in range(len(doc)):
-						if i != j:
-							wsum[i] += sentencesimilar [ (i , j) ]
-
-				ws = [1.0 / len(doc) ] * len(doc)
-
-				turns = niter
-				while turns > 0:
-					turns -= 1
-					wsnext = [1 - d] * len(doc)
-					for i in range(len(doc)):
-						for j in range(len(doc)):
-							if i != j and wsum[j] != 0:
-								wsnext[i] += d * sentencesimilar[i , j] / wsum[j] * ws[j]
-					if wsnext == ws:
-						break
-					ws = wsnext
-
-				self.feature37.append(ws)
-			self.feature37 = [ utils.scalemax(docvec) for docvec in self.feature37]
 			
+			self.feature37 = []
+			for doc in self.docs_limit:
+				self.feature37.append(utils.pagerank.solve(doc))		
 
 	def solve_feature38(self , redo = False):
 		if getattr(self , 'feature38' , None) is None or redo:

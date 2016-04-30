@@ -21,7 +21,7 @@ def scalemax(vec):
 	vec = np.array(vec)
 	if vec.max() != 0:
 		vec =  vec / vec.max()
-	return vec
+	return list(vec)
 
 def normalize(vec):
 	vec = np.array(vec)
