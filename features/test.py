@@ -51,7 +51,9 @@ TESTLIST = [
 		'feature36',
 		'feature37',
 		'feature38',
-		'feature39'
+		'feature39',
+		'feature40',
+		'feature41'
 	      ]	
  
 print ""

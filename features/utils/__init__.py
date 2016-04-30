@@ -17,9 +17,15 @@ def property(val):
 	else:
 		raise("param must be unicode")
 
+def scalemax(vec):
+	vec = np.array(vec)
+	if vec.max() != 0:
+		vec =  vec / vec.max()
+	return vec
+
 def normalize(vec):
 	vec = np.array(vec)
-	denominator = np.sqrt(np.sum( vec ** 2 ))
+	denominator = np.sum( vec )
 	if  denominator != 0:
 		vec  = vec / denominator
 	return list(vec)
