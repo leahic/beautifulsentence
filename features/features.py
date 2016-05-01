@@ -17,7 +17,7 @@ class Feature(utils.SaveLoad):
 		self.datapath = datapath if datapath.endswith('/') else datapath + '/'
 		jieba.setLogLevel('NOTSET')
 
-	def read(self , fname , redo = False):
+	def read(self , fname = 'sample_sentence.txt' , redo = False):
 		if getattr(self ,  'docs' , None) is None or redo:
 			f = file(self.datapath + fname , 'r')
 			self.docs = []
@@ -93,12 +93,14 @@ class Feature(utils.SaveLoad):
 	def solve_feature1(self , redo = False):
 		if getattr(self , 'feature1' , None) is None or redo:
 			self.feature1 = [ [ len( ''.join(sentence) ) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature1 = [ utils.scalemax(docvec) for docvec in self.feature1]
+			self.feature1_scale = True
+			
  
 	def solve_feature2(self , redo = False):
 		if getattr(self , 'feature2' , None) is None or redo:
 			self.feature2 = [ [ len( sentence ) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature2 = [ utils.scalemax(docvec) for docvec in self.feature2]
+			self.feature2_scale = True
+			
 
 	def solve_feature3(self , redo = False):
 		if getattr(self , 'feature3' , None) is None or redo:
@@ -115,7 +117,7 @@ class Feature(utils.SaveLoad):
 	def solve_feature4(self , redo = False):
 		if getattr(self , 'feature4' , None) is None or redo:
 			self.feature4 = [ [ len(set(sentence)) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature4 = [ utils.scalemax(docvec) for docvec in self.feature4]
+			self.feature4_scale = True
 
 	def solve_feature5(self , redo = False):
 		if getattr(self , 'feature5' , None) is None or redo:
@@ -134,7 +136,8 @@ class Feature(utils.SaveLoad):
 		if getattr(self , 'feature6' , None) is None or redo:
 			self.readstopwords()
 			self.feature6 = [ [ len(set(sentence)) for sentence in doc ] for doc in self.docs_limit ]
-			self.feature6 = [ utils.scalemax(docvec) for docvec in self.feature6]
+			self.feature6_scale = True
+			
 
 
 	def solve_feature7(self , redo = False):
@@ -153,7 +156,8 @@ class Feature(utils.SaveLoad):
 		if getattr(self , 'feature8' , None) is None or redo:
 			self.readstopwords()
 			self.feature8 = [ [ len(set( [ word for word in sentence if  len(word) == 4 ] )) for sentence in doc ] for doc in self.docs_limit ]
-			self.feature8 = [ utils.scalemax(docvec) for docvec in self.feature8]
+			self.feature8_scale = True
+			
 
 	def solve_feature9(self , redo = False):
 		if getattr(self , 'feature9' , None) is None or redo:
@@ -172,7 +176,8 @@ class Feature(utils.SaveLoad):
 		if getattr(self , 'feature10' , None) is None or redo:
 			self.readassociated()
 			self.feature10 = [ [ len( [ word for word in sentence if word in self.associated ] ) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature10 = [ utils.scalemax(docvec) for docvec in self.feature10]
+			self.feature10_scale = True
+			
 
 	def solve_feature11(self , redo = False):
 		if getattr(self , 'feature11' , None) is None or redo:
@@ -318,13 +323,15 @@ class Feature(utils.SaveLoad):
 		if getattr(self , 'feature15' , None) is None or redo:
 			self.readembedded()
 			self.feature15 = [ [ len( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature15 = [ utils.scalemax(docvec) for docvec in self.feature15]
+			self.feature15_scale = True
+			
 
 	def solve_feature16(self , redo = False):
 		if getattr(self , 'feature16' , None) is None or redo:
 			self.readembedded()
 			self.feature16 = [ [ len(set( [word for word in sentence if len(word) == 2 and self._startswith(word , self.embedded[0]) ] ) ) for sentence in doc ] for doc in self.docs_norm ]
-			self.feature16 = [ utils.scalemax(docvec) for docvec in self.feature16]
+			self.feature16_scale = True
+			
 
 	def solve_feature17(self , redo = False):
 		if getattr(self , 'feature17' , None) is None or redo:
@@ -345,7 +352,9 @@ class Feature(utils.SaveLoad):
 					docvec.append( wordnums )
 
 				self.feature17.append( docvec )
-			self.feature17 = [ utils.scalemax(docvec) for docvec in self.feature17]
+
+			self.feature17_scale = True
+			
 
 	def solve_feature18(self , redo = False):
 		if getattr(self , 'feature18' , None) is None or redo:
@@ -366,7 +375,8 @@ class Feature(utils.SaveLoad):
 					docvec.append( len(wordtarget) )
 
 				self.feature18.append( docvec )
-			self.feature18 = [ utils.scalemax(docvec) for docvec in self.feature18]
+
+			self.feature18_scale = True
 
 
 	def solve_feature21(self , redo = False):
@@ -437,8 +447,8 @@ class Feature(utils.SaveLoad):
 					docvec.append( len( [ part for part in sentence if len(part) > 0 ]) )
 
 				self.feature27.append( docvec )
-			self.feature27 = [ utils.scalemax(docvec) for docvec in self.feature27]
-
+			
+			self.feature27_scale = True
 
 	def solve_feature28(self , redo = False):
 		if getattr(self , 'feature28' , None) is None or redo:
@@ -465,7 +475,8 @@ class Feature(utils.SaveLoad):
 					docvec.append( average )
 
 				self.feature28.append( docvec )
-			self.feature28 = [ utils.scalemax(docvec) for docvec in self.feature28]
+			
+			self.feature28_scale = True
 
 	def solve_feature29(self , redo = False):
 		if getattr(self , 'feature29' , None) is None or redo:
@@ -537,9 +548,9 @@ class Feature(utils.SaveLoad):
 					docvec.append(analogynum)
 
 				self.feature30.append(docvec)
-			self.feature30 = [ utils.scalemax(docvec) for docvec in self.feature30]
 
-
+			self.feature30_scale = True
+			
 	def solve_feature31(self , redo = False):
 
 		def editdistance(s1 , s2):
@@ -644,7 +655,9 @@ class Feature(utils.SaveLoad):
 					docvec[index] += checkparallel( doc[index:] )
 
 				self.feature31.append( docvec )
-			self.feature31 = [ utils.scalemax(docvec) for docvec in self.feature31]
+
+			self.feature31_scale = True
+			
 
 
 	def solve_feature32(self , redo = False):
@@ -701,7 +714,9 @@ class Feature(utils.SaveLoad):
 					docvec.append(questionum)
 
 				self.feature32.append(docvec)
-			self.feature32 = [ utils.scalemax(docvec) for docvec in self.feature32]
+
+			self.feature32_scale = True
+			
 
 	def solve_feature33(self , redo = False):
 		if getattr(self , 'feature33' , None) is None or redo:
@@ -899,7 +914,7 @@ class Feature(utils.SaveLoad):
 
 				self.feature38.append(docvec)
 
-			self.feature38 = [ utils.scalemax(docvec) for docvec in self.feature38]
+			self.feature38_scale = True
 
 
 
@@ -937,7 +952,9 @@ class Feature(utils.SaveLoad):
 						paranum += 1
 
 				self.feature39.append(docvec)
-			self.feature39 = [ utils.scalemax(docvec) for docvec in self.feature39]
+
+			self.feature39_scale = True
+			
 
 	def solve_feature40(self , redo = False):
 		if getattr(self, 'feature40' , None) is None or redo:
@@ -948,7 +965,8 @@ class Feature(utils.SaveLoad):
 				for index , sentence in enumerate(doc):
 					docvec.append(index)
 				self.feature40.append(docvec)
-			self.feature40 = [ utils.scalemax(docvec) for docvec in self.feature40]
+			
+			self.feature40_scale = True
 
 
 	def solve_feature41(self , redo = False):
@@ -960,7 +978,44 @@ class Feature(utils.SaveLoad):
 				for index , sentence in enumerate(doc):
 					docvec.append( len(doc) - index - 1)
 				self.feature41.append(docvec)
-			self.feature41 = [ utils.scalemax(docvec) for docvec in self.feature41]
+			
+			self.feature41_scale = True
 
 
-	
+	def solve_all(self ,  full = True , featurelist = []):
+		if full:
+			featurelist = [ 'feature' + str(i) for i in range(1 , 42) ]
+
+		for attrname in featurelist:
+			if getattr(self, 'solve_' + attrname , None) is not None:
+				getattr( self , 'solve_' + attrname )()
+
+	def getvec(self , full = True , featurelist = []):
+		if full:
+			featurelist = [ 'feature' + str(i) for i in range(1 , 42) ]			
+
+		result = []
+		for index in range(len(self.docs)):
+			docvec = []
+			for index2 in range(len(self.docs[index])):
+				docvec.append( [] )
+			result.append(docvec)
+
+		for attrname in featurelist:
+			if getattr(self, attrname , None) is not None:
+				if getattr(self, attrname + '_size' , None) is not None:
+					for index in range(len( getattr( self , attrname ) ) ):
+						for index2 in range(len( getattr( self , attrname )[index] )):
+							result[index][index2] += getattr( self , attrname )[index][index2]
+				elif getattr(self, attrname + '_scale' , None) is None:
+					for index in range(len( getattr( self , attrname ) ) ):
+						for index2 in range(len( getattr( self , attrname )[index] )):
+							result[index][index2].append( getattr( self , attrname )[index][index2] )
+				else:
+					for index in range(len( getattr( self , attrname ) ) ):
+						docvec = getattr( self , attrname )[index]
+						docvec = utils.scalemax(docvec)
+						for index2 in range(len( docvec )):
+							result[index][index2].append( docvec[index2] )
+
+		return result
