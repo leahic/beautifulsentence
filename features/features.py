@@ -990,9 +990,11 @@ class Feature(utils.SaveLoad):
 			if getattr(self, 'solve_' + attrname , None) is not None:
 				getattr( self , 'solve_' + attrname )()
 
-	def getvec(self , full = True , featurelist = []):
+	def getvec(self , full = True , decfeaturenums = []):
 		if full:
-			featurelist = [ 'feature' + str(i) for i in range(1 , 42) ]			
+			featurelist = [ 'feature' + str(i) for i in range(1 , 42) ]
+		else:
+			featurelist = [ 'feature' + str(i) for i in range(1 , 42)  if  i not in decfeaturenums]
 
 		result = []
 		for index in range(len(self.docs)):

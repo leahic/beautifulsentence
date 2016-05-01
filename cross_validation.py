@@ -50,7 +50,12 @@ def outputrain(dirpath , traindat , vecs , labels , trainqid , pnrate):
 		thelabels = labels[qid - 1]
 
 		pnum = len( [label for label in thelabels if label > 0] )
-		nnum = int(1.0 / pnrate * pnum)
+		nnum = len( [label for label in thelabels if label == 0] )
+		if pnrate > 0:
+			if pnum >= nnum * pnrate:
+				pnum = int(nnum * pnrate)
+			else:
+				nnum = int(pnum / pnrate)
 
 		positive = []
 		negative = []
@@ -86,8 +91,12 @@ def outputest(dirpath , testdat , vecs , labels , testqid , pnrate):
 		thelabels = labels[qid - 1]
 
 		pnum = len( [label for label in thelabels if label > 0] )
-		nnum = int(1.0 / pnrate * pnum)
-
+		nnum = len( [label for label in thelabels if label == 0] )
+		if pnrate > 0:
+			if pnum >= nnum * pnrate:
+				pnum = int(nnum * pnrate)
+			else:
+				nnum = int(pnum / pnrate)
 		positive = []
 		negative = []
 
@@ -157,12 +166,14 @@ def MAP(dirpath , predictdat):
 	mapvec = []
 
 	for index in range(len(result)):
-		result[index] = sorted(result[index] , key = lambda x : -x[1])
+		result[index] = sorted(result[index] , key = lambda x : -x[1])		
 		themap = []
+		nums = 0.0
 		for rank , (label , value) in enumerate(result[index]):
 			if label > 0:
-				themap.append( 1 / float(rank + 1) )
-
+				nums += 1.0
+				themap.append( nums / float(rank + 1) )
+		print np.average(themap) , result[index]
 		mapvec.append( np.average(themap) )
 
 	finalmap = np.average( mapvec )
@@ -186,7 +197,7 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	#read data 
 	obj = features.Feature().load('features/featureobj')
 
-	vecs = obj.getvec()
+	vecs = obj.getvec(full = False , decfeaturenums = [])
 
 	labels = getlables(datapath)
 
