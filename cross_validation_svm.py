@@ -177,6 +177,8 @@ def MAP(dirpath , predictdat):
 		mapvec.append( np.average(themap) )
 
 	finalmap = np.average( mapvec )
+	if np.isnan(finalmap):
+		finalmap = 0.0
 
 	f = file(dirpath + 'MAP.txt','w')
 	f.write( str(finalmap) + '\n')
@@ -211,24 +213,26 @@ def MRR(dirpath , predictdat):
 		result[ qidpos[qid] ].append( [ label , targetvecs[linenum][2] ] ) 
 	f.close()
 
-	mapvec = []
+	mrrvec = []
 
 	for index in range(len(result)):
 		result[index] = sorted(result[index] , key = lambda x : -x[1])		
-		themap = []
+		themrr = 0.0
 		for rank , (label , value) in enumerate(result[index]):
 			if label > 0:
-				themap.append( 1.0 / float(rank + 1) )
+				themrr = 1.0 / float(rank + 1) 
 				break
-		mapvec.append( np.average(themap) )
+		mrrvec.append( themrr )
 
-	finalmap = np.average( mapvec )
+	finalmrr = np.average( mrrvec )
+	if np.isnan(finalmrr):
+		finalmrr = 0.0
 
 	f = file(dirpath + 'MRR.txt','w')
-	f.write( str(finalmap) + '\n')
+	f.write( str(finalmrr) + '\n')
 	f.close()
 
-	return finalmap
+	return finalmrr
 
 def  PR(dirpath , predictdat , k):
 	if not dirpath.endswith('/'):
@@ -256,7 +260,7 @@ def  PR(dirpath , predictdat , k):
 		result[ qidpos[qid] ].append( [ label , targetvecs[linenum][2] ] ) 
 	f.close()
 
-	mapvec = [ [] , [] ]
+	prvec = [ [] , [] ]
 
 	for index in range(len(result)):
 		result[index] = sorted(result[index] , key = lambda x : -x[1])
@@ -272,16 +276,16 @@ def  PR(dirpath , predictdat , k):
 			precision = 0.0
 			recall = 0.0
 			
-		mapvec[0].append( precision  )
-		mapvec[1].append( recall  )
+		prvec[0].append( precision  )
+		prvec[1].append( recall  )
 
-	finalmap = [ np.average(mapvec[0]) , np.average(mapvec[1]) ]
+	finalpr = [ np.average(prvec[0]) , np.average(prvec[1]) ]
 
 	f = file(dirpath + 'PR.txt','w')
-	f.write( str(finalmap) + '\n')
+	f.write( str(finalpr) + '\n')
 	f.close()
 
-	return finalmap
+	return finalpr
 
 
 def main( options = ['-b' , '1'] , datapath = 'data' , programpath = 'svm' ,traindat = 'train.dat' , modeldat = 'model.dat' , testdat = 'test.dat' , predictdat = 'predict.dat' , k_fold = 10.0 , pnrate = 1.0):
