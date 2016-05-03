@@ -174,7 +174,10 @@ def MAP(dirpath , predictdat):
 				nums += 1.0
 				themap.append( nums / float(rank + 1) )
 		print np.average(themap) , result[index]
-		mapvec.append( np.average(themap) )
+		if np.isnan( np.average(themap) ):
+			mapvec.append( 0.0 )
+		else:
+			mapvec.append(np.average(themap))
 
 	finalmap = np.average( mapvec )
 	if np.isnan(finalmap):
@@ -303,7 +306,7 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	obj = features.Feature().load('features/featureobj')
 
 
-	vecs = obj.getvec(full = False , decfeaturenums = [])
+	vecs = obj.getvec(full = False , decfeaturenums = [13])
 
 	labels = getlables(datapath)
 

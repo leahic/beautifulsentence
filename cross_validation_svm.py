@@ -174,7 +174,10 @@ def MAP(dirpath , predictdat):
 			if label > 0:
 				nums += 1.0
 				themap.append( nums / float(rank + 1) )
-		mapvec.append( np.average(themap) )
+		if np.isnan( np.average(themap) ):
+			mapvec.append( 0.0 )
+		else:
+			mapvec.append(np.average(themap))
 
 	finalmap = np.average( mapvec )
 	if np.isnan(finalmap):
