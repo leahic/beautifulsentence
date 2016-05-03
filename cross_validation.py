@@ -185,8 +185,108 @@ def MAP(dirpath , predictdat):
 	return finalmap
 
 
+def MRR(dirpath , predictdat):
+	if not dirpath.endswith('/'):
+		dirpath = dirpath + '/'
 
-def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank' ,traindat = 'train.dat' , modeldat = 'model.dat' , testdat = 'test.dat' , predictdat = 'predict.dat' , k_fold = 10.0 , pnrate = 1.0):
+	targetvecs = []
+
+	f = file(dirpath + predictdat , 'r')
+	for line in f:
+		targetvecs.append( eval(line) )
+	f.close()
+
+
+	result = []
+
+	qidpos = dict()
+
+	f = file(dirpath + 'testqid.txt','r')
+	for linenum , line in enumerate(f):
+		qid , index , label= [ eval(x) for x in line.split()]
+		if qid not in qidpos:
+			result.append( [] )
+			qidpos[qid] = len(result) - 1
+		result[ qidpos[qid] ].append( [ label , targetvecs[linenum] ] ) 
+	f.close()
+
+	mapvec = []
+
+	for index in range(len(result)):
+		result[index] = sorted(result[index] , key = lambda x : -x[1])		
+		themap = []
+		for rank , (label , value) in enumerate(result[index]):
+			if label > 0:
+				themap.append( 1.0 / float(rank + 1) )
+				break
+		print np.average(themap) , result[index]
+		mapvec.append( np.average(themap) )
+
+	finalmap = np.average( mapvec )
+
+	f = file(dirpath + 'MRR.txt','w')
+	f.write( str(finalmap) + '\n')
+	f.close()
+
+	return finalmap
+
+def  PR(dirpath , predictdat , k):
+	if not dirpath.endswith('/'):
+		dirpath = dirpath + '/'
+
+	targetvecs = []
+
+	f = file(dirpath + predictdat , 'r')
+	for line in f:
+		targetvecs.append( eval(line) )
+	f.close()
+
+
+	result = []
+
+	qidpos = dict()
+
+	f = file(dirpath + 'testqid.txt','r')
+	for linenum , line in enumerate(f):
+		qid , index , label= [ eval(x) for x in line.split()]
+		if qid not in qidpos:
+			result.append( [] )
+			qidpos[qid] = len(result) - 1
+		result[ qidpos[qid] ].append( [ label , targetvecs[linenum] ] ) 
+	f.close()
+
+	mapvec = [ [] , [] ]
+
+	for index in range(len(result)):
+		result[index] = sorted(result[index] , key = lambda x : -x[1])
+
+		target = result[index][0:k]
+		molecular =  float(len([ label for (label , value) in target if label > 0 ]))
+		denominator = float(len([ label for (label , value) in result[index] if label > 0 ]))
+		
+		print molecular , denominator
+
+		if molecular != 0 and denominator != 0:
+			precision =  molecular / float(len(target))
+			recall = molecular / denominator
+		else:
+			precision = 0.0
+			recall = 0.0
+
+		print (precision , recall) , result[index]
+		mapvec[0].append( precision  )
+		mapvec[1].append( recall  )
+
+	finalmap = [ np.average(mapvec[0]) , np.average(mapvec[1]) ]
+
+	f = file(dirpath + 'PR.txt','w')
+	f.write( str(finalmap) + '\n')
+	f.close()
+
+	return finalmap
+
+
+def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank' ,traindat = 'train.dat' , modeldat = 'model.dat' , testdat = 'test.dat' , predictdat = 'predict.dat' , k_fold = 10.0 , pnrate = 1.0 , scorefunc = 'MAP'):
 	if not datapath.endswith('/'):
 		datapath = datapath + '/'
 	if not programpath.endswith('/'):
@@ -196,6 +296,7 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	nowtime = time.strftime("%m-%d-%H-%M-%S", time.localtime())
 	#read data 
 	obj = features.Feature().load('features/featureobj')
+
 
 	vecs = obj.getvec(full = False , decfeaturenums = [])
 
@@ -221,7 +322,11 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	#make group dirs
 	makedirs(programpath , k_fold)
 
-	resultvec = []
+	if scorefunc == 'MAP' or scorefunc == 'MRR':
+		resultvec = []
+	elif scorefunc.startswith('PR'):
+		resultvec = [[] , []]
+
 	#exec
 	for groupId in range(1 , k_fold + 1):
 		testqid = sorted( fold_group[groupId - 1] )
@@ -232,12 +337,27 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 		outputrain(dirpath , traindat , vecs , labels , trainqid , pnrate)
 		outputest(dirpath , testdat , vecs , labels , testqid , pnrate)
 		train_predict(programpath , options , dirpath , traindat , testdat , modeldat , predictdat)
-		resultvec.append( MAP(dirpath , predictdat) )
+		
+		if scorefunc == 'MAP':
+			resultvec.append( MAP(dirpath , predictdat) )
+		elif scorefunc == 'MRR':
+			resultvec.append( MRR(dirpath , predictdat) )
+		elif scorefunc.startswith('PR'):
+			tmPR =  PR(dirpath , predictdat , eval(scorefunc[2:]))
+			resultvec[0].append(tmPR[0])
+			resultvec[1].append(tmPR[1])
 
-	print np.average( resultvec )
-	f = file(programpath + nowtime + '/' + 'MAP.txt' , 'w')
+	if scorefunc == 'MAP' or scorefunc == 'MRR':
+		print np.average( resultvec )
+	elif scorefunc.startswith('PR'):
+		print np.average( resultvec[0] ) , np.average( resultvec[1] )
+			
+	f = file(programpath + nowtime + '/' + scorefunc + '.txt' , 'w')
 	f.write( str(resultvec) + '\n')
-	f.write( str(np.average(resultvec)) + '\n' )
+	if scorefunc == 'MAP' or scorefunc == 'MRR':
+		f.write( str(np.average(resultvec)) + '\n' )
+	elif scorefunc.startswith('PR'):
+		f.write(str(np.average(resultvec[0])) + ' ' + str(np.average(resultvec[1])) + '\n')	
 	f.close()
 
 
