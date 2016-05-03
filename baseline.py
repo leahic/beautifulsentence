@@ -84,6 +84,9 @@ def PR(matrix , labels , k):
 	finalpr = [ np.average(prvec[0]) , np.average(prvec[1]) ]
 	return finalpr
 
+
+
+
 def analysis(matrix , labels , name):
 	f = file('baseline/' + name + '_analysis.txt','w')
 	data = [
@@ -94,6 +97,22 @@ def analysis(matrix , labels , name):
   		PR(matrix,labels,10)
 		]
 	f.write( str(data)  + '\n')
+	f.close()
+
+	global origin
+	pastline = 0
+
+	f = file('baseline/' + name + '_sentence.txt','w')
+	for index in range(len(matrix)):
+		ranks = enumerate(matrix[index])
+		ranks = sorted(ranks , key = lambda x : -x[1])
+
+		for index2 , value in ranks:	
+			f.write(origin[index2 + pastline].encode('utf-8') + '\n' )
+		f.write('********************\n')
+
+		pastline += len(matrix[index])
+
 	f.close()
 
 
@@ -130,6 +149,12 @@ def solve_textrank(obj , labels):
 def main():
 
 	obj = features.Feature().load('features/featureobj')
+	global origin
+	f = file('data/sample_sentence.txt','r')
+	origin = [line.strip('\n').decode('utf-8').replace(' ', '') for line in f if not line .startswith('********************')]
+	f.close()
+
+	print len(origin)
 
 	labels = getlables()
 
