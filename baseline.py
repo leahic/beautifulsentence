@@ -108,8 +108,9 @@ def analysis(matrix , labels , name):
 		ranks = sorted(ranks , key = lambda x : -x[1])
 
 		for index2 , value in ranks:	
+			f.write(str(value) + ' ')
 			f.write(origin[index2 + pastline].encode('utf-8') + '\n' )
-		f.write('********************\n')
+		f.write('******************** ********************\n')
 
 		pastline += len(matrix[index])
 

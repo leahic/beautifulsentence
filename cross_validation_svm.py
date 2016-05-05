@@ -283,6 +283,8 @@ def  PR(dirpath , predictdat , k):
 		prvec[1].append( recall  )
 
 	finalpr = [ np.average(prvec[0]) , np.average(prvec[1]) ]
+	finalpr[0] = 0.0 if np.isnan(finalpr[0])  else finalpr[0]
+	finalpr[1] = 0.0 if np.isnan(finalpr[1])  else finalpr[1]
 
 	f = file(dirpath + 'PR.txt','w')
 	f.write( str(finalpr) + '\n')

@@ -286,6 +286,8 @@ def  PR(dirpath , predictdat , k):
 		prvec[1].append( recall  )
 
 	finalpr = [ np.average(prvec[0]) , np.average(prvec[1]) ]
+	finalpr[0] = 0.0 if np.isnan(finalpr[0])  else finalpr[0]
+	finalpr[1] = 0.0 if np.isnan(finalpr[1])  else finalpr[1]
 
 	f = file(dirpath + 'PR.txt','w')
 	f.write( str(finalpr) + '\n')
@@ -294,7 +296,7 @@ def  PR(dirpath , predictdat , k):
 	return finalpr
 
 
-def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank' ,traindat = 'train.dat' , modeldat = 'model.dat' , testdat = 'test.dat' , predictdat = 'predict.dat' , k_fold = 10.0 , pnrate = 1.0 , scorefunc = 'MAP'):
+def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank' ,traindat = 'train.dat' , modeldat = 'model.dat' , testdat = 'test.dat' , predictdat = 'predict.dat' , k_fold = 10.0 , pnrate = 1.0):
 	if not datapath.endswith('/'):
 		datapath = datapath + '/'
 	if not programpath.endswith('/'):
@@ -306,7 +308,7 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	obj = features.Feature().load('features/featureobj')
 
 
-	vecs = obj.getvec(full = False , decfeaturenums = [13])
+	vecs = obj.getvec(full = False , decfeaturenums = [13] + [37] + range(38,42))
 
 	labels = getlables(datapath)
 
@@ -330,10 +332,11 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 	#make group dirs
 	makedirs(programpath , k_fold)
 
-	if scorefunc == 'MAP' or scorefunc == 'MRR':
-		resultvec = []
-	elif scorefunc.startswith('PR'):
-		resultvec = [[] , []]
+	resultvec1 = []
+	resultvec2 = []
+	resultvec3 = [ [] , [] ]
+	resultvec4 = [ [] , [] ]
+	resultvec5 = [ [] , [] ]
 
 	#exec
 	for groupId in range(1 , k_fold + 1):
@@ -346,26 +349,52 @@ def main( options = ['-c' , '100'] , datapath = 'data' , programpath = 'svmrank'
 		outputest(dirpath , testdat , vecs , labels , testqid , pnrate)
 		train_predict(programpath , options , dirpath , traindat , testdat , modeldat , predictdat)
 		
-		if scorefunc == 'MAP':
-			resultvec.append( MAP(dirpath , predictdat) )
-		elif scorefunc == 'MRR':
-			resultvec.append( MRR(dirpath , predictdat) )
-		elif scorefunc.startswith('PR'):
-			tmPR =  PR(dirpath , predictdat , eval(scorefunc[2:]))
-			resultvec[0].append(tmPR[0])
-			resultvec[1].append(tmPR[1])
+		resultvec1.append( MAP(dirpath , predictdat) )
 
-	if scorefunc == 'MAP' or scorefunc == 'MRR':
-		print np.average( resultvec )
-	elif scorefunc.startswith('PR'):
-		print np.average( resultvec[0] ) , np.average( resultvec[1] )
+		resultvec2.append( MRR(dirpath , predictdat) )
+
+		tmPR =  PR(dirpath , predictdat , 1)
+		resultvec3[0].append(tmPR[0])
+		resultvec3[1].append(tmPR[1])
+
+		tmPR =  PR(dirpath , predictdat , 5)
+		resultvec4[0].append(tmPR[0])
+		resultvec4[1].append(tmPR[1])
+
+		tmPR =  PR(dirpath , predictdat , 10)
+		resultvec5[0].append(tmPR[0])
+		resultvec5[1].append(tmPR[1])
+
+
+	print np.average( resultvec1 )
+	print np.average( resultvec2 )
+	print np.average( resultvec3[0] ) , np.average( resultvec3[1] ) 
+	print np.average( resultvec4[0] ) , np.average( resultvec4[1] )
+	print np.average( resultvec5[0] ) , np.average( resultvec5[1] )
 			
-	f = file(programpath + nowtime + '/' + scorefunc + '.txt' , 'w')
-	f.write( str(resultvec) + '\n')
-	if scorefunc == 'MAP' or scorefunc == 'MRR':
-		f.write( str(np.average(resultvec)) + '\n' )
-	elif scorefunc.startswith('PR'):
-		f.write(str(np.average(resultvec[0])) + ' ' + str(np.average(resultvec[1])) + '\n')	
+	f = file(programpath + nowtime + '/' + 'MAP' + '.txt' , 'w')
+	f.write( str(resultvec1) + '\n')
+	f.write( str(np.average(resultvec1)) + '\n' )
+	f.close()
+
+	f = file(programpath + nowtime + '/' + 'MRR' + '.txt' , 'w')
+	f.write( str(resultvec2) + '\n')
+	f.write( str(np.average(resultvec2)) + '\n' )
+	f.close()
+
+	f = file(programpath + nowtime + '/' + 'PR1' + '.txt' , 'w')
+	f.write( str(resultvec3) + '\n')
+	f.write(str(np.average(resultvec3[0])) + ' ' + str(np.average(resultvec3[1])) + '\n')	
+	f.close()
+
+	f = file(programpath + nowtime + '/' + 'PR5' + '.txt' , 'w')
+	f.write( str(resultvec4) + '\n')
+	f.write(str(np.average(resultvec4[0])) + ' ' + str(np.average(resultvec4[1])) + '\n')	
+	f.close()
+
+	f = file(programpath + nowtime + '/' + 'PR10' + '.txt' , 'w')
+	f.write( str(resultvec5) + '\n')
+	f.write(str(np.average(resultvec5[0])) + ' ' + str(np.average(resultvec5[1])) + '\n')	
 	f.close()
 
 
