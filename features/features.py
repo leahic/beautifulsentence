@@ -49,18 +49,18 @@ class Feature(utils.SaveLoad):
 			f.close()
 
 
-	def readstopwords(self , redo = False):
+	def readstopwords(self ,fname='stopwords.txt' , redo = False):
 		if getattr(self , 'stopwords' , None) is None or redo:
-			f = file(self.datapath + 'stopwords.txt','r')
+			f = file(self.datapath + fname ,'r')
 			self.stopwords = [ line.strip('\n').decode('utf-8') for line in f ]
 			f.close()
 
 		if getattr(self, 'docs_limit' , None) is None or redo:
 			self.docs_limit = [ [ [ word for word in sentence if word not in self.stopwords] for sentence in doc] for doc in self.docs_norm]
 
-	def readassociated(self , redo = False):
+	def readassociated(self ,fname='associated_words.txt', redo = False):
 		if getattr(self , 'associated' , None) is None or redo:
-			f = file(self.datapath + 'associated_words.txt','r')
+			f = file(self.datapath + fname,'r')
 			self.associated = [ line.strip('\n').decode('utf-8') for line in f ]
 			f.close()		
 
@@ -582,13 +582,13 @@ class Feature(utils.SaveLoad):
 			for index in range( 1 , len(segments) ):
 				sub =  abs( len(segments[index]) - basel )
 
-				if sub > 7:
+				if sub > 3:
 					return result
 
 				edis = editdistance( utils.property(segments[index]) , basep ) 
 				rate =  edis / max( float(len(segments[index])) ,  basel )
 
-				if rate > 0.5:
+				if rate > 0.3:
 					return result
 
 				samenum = 0
@@ -597,13 +597,13 @@ class Feature(utils.SaveLoad):
 					if x in segments[index]:
 						samenum += 1
 
-				if samenum < 3:
+				if samenum < 2:
 					return result
 
 				if sub == 0:
-					result += 0.1 + 0.25 * (1 - rate) + 0.65 * np.log2(samenum)
+					result += 1
 				else:
-					result += 0.1 / sub + 0.25 *  (1 - rate) + 0.65 * np.log2(samenum)
+					result += 1
 
 			return result 
 					
@@ -649,7 +649,7 @@ class Feature(utils.SaveLoad):
 						average /= len(seg)
 						parallel /= average
 
-					docvec.append( parallel )
+					docvec.append( 1 if parallel > 0.2 else 0 )
 
 				for index in range(len(doc)):
 					docvec[index] += checkparallel( doc[index:] )
@@ -985,6 +985,8 @@ class Feature(utils.SaveLoad):
 	def solve_all(self ,  full = True , featurelist = []):
 		if full:
 			featurelist = [ 'feature' + str(i) for i in range(1 , 42) ]
+		else:
+			featurelist = [ 'feature' + str(i) for i in featurelist ]
 
 		for attrname in featurelist:
 			if getattr(self, 'solve_' + attrname , None) is not None:
